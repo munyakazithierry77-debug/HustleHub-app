@@ -1,0 +1,9 @@
+{
+  "name": "HustleHub Rwanda",
+  "description": "A mobile-first marketplace for jobs, products, and house rentals designed for unemployed youth and citizens in Rwanda.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

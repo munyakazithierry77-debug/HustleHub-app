@@ -1,0 +1,155 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        request.auth.token.email == 'munyakazithierry77@gmail.com'
+      );
+    }
+
+    // --- Users ---
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() || isAdmin(); 
+      allow create, update: if (isOwner(userId) || isAdmin()) && 
+        incoming().uid == userId &&
+        incoming().fullName is string && incoming().fullName.size() <= 100 &&
+        incoming().email == request.auth.token.email &&
+        (incoming().trustScore >= 0 && incoming().trustScore <= 100);
+    }
+
+    // --- Jobs ---
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && 
+        incoming().employerId == request.auth.uid &&
+        incoming().status == 'open' &&
+        incoming().createdAt == request.time;
+      allow update: if (isSignedIn() || isAdmin()) && (
+        (existing().employerId == request.auth.uid || isAdmin()) &&
+        incoming().employerId == existing().employerId &&
+        incoming().createdAt == existing().createdAt
+      );
+      allow delete: if isAdmin();
+
+      // Applications subcollection
+      match /applications/{appId} {
+        allow get: if isSignedIn() && (
+          resource.data.applicantId == request.auth.uid ||
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if isSignedIn() && (
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid ||
+          resource.data.applicantId == request.auth.uid ||
+          isAdmin()
+        );
+        allow create: if isSignedIn() && 
+          incoming().applicantId == request.auth.uid &&
+          incoming().jobId == jobId &&
+          incoming().appliedAt == request.time &&
+          incoming().status == 'pending';
+        allow update: if (isSignedIn() || isAdmin()) && (
+          // Employer can update status
+          ((get(/databases/$(database)/documents/jobs/$(jobId)).data.employerId == request.auth.uid || isAdmin()) &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Applicant can't update much but maybe status to cancelled
+          ((existing().applicantId == request.auth.uid || isAdmin()) &&
+           incoming().status == 'cancelled' &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+        );
+      }
+    }
+
+    // --- Products ---
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && 
+        incoming().sellerId == request.auth.uid &&
+        incoming().status == 'available' &&
+        incoming().createdAt == request.time;
+      allow update: if (isSignedIn() || isAdmin()) && (
+        (existing().sellerId == request.auth.uid || isAdmin()) &&
+        incoming().sellerId == existing().sellerId &&
+        incoming().createdAt == existing().createdAt
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Rentals ---
+    match /rentals/{rentalId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && 
+        incoming().landlordId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if (isSignedIn() || isAdmin()) && (
+        (existing().landlordId == request.auth.uid || isAdmin()) &&
+        incoming().landlordId == existing().landlordId &&
+        incoming().createdAt == existing().createdAt
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Chats ---
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && (request.auth.uid in chatId.split('_') || isAdmin());
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (request.auth.uid in chatId.split('_') || isAdmin());
+        allow create: if isSignedIn() && 
+          (request.auth.uid in chatId.split('_') || isAdmin()) &&
+          incoming().senderId == request.auth.uid &&
+          incoming().createdAt == request.time;
+      }
+    }
+
+    // --- Reviews ---
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if (isSignedIn() || isAdmin()) && 
+        incoming().fromId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().rating >= 1 && incoming().rating <= 5;
+      allow delete: if isAdmin();
+    }
+
+    // --- Notifications ---
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || (resource.data.userId == 'admin' && isAdmin()));
+      allow create: if isSignedIn(); // Allow system or users to push notifications
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || (resource.data.userId == 'admin' && isAdmin()));
+    }
+  }
+}

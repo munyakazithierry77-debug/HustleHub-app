@@ -1,0 +1,175 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "bio": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "cvUrl": { "type": "string" },
+        "idPhotocopyUrl": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "integer" },
+        "trustScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "completedJobsCount": { "type": "integer" },
+        "completedTransactionsCount": { "type": "integer" },
+        "isVerified": { "type": "boolean" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["uid", "fullName", "email"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Employment opportunity",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "employerId": { "type": "string" },
+        "employerName": { "type": "string" },
+        "type": { "type": "string", "enum": ["casual", "part-time", "full-time"] },
+        "category": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "salaryRange": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["open", "closed"] }
+      },
+      "required": ["title", "description", "employerId", "type", "category"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Job application",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "applicantId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "shortlisted", "rejected", "accepted"] },
+        "appliedAt": { "type": "string", "format": "date-time" },
+        "coverLetter": { "type": "string" }
+      },
+      "required": ["jobId", "applicantId", "status", "appliedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Item for sale",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["available", "sold"] }
+      },
+      "required": ["name", "sellerId", "price", "category"]
+    },
+    "Rental": {
+      "title": "Rental",
+      "description": "House or room for rent",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "landlordId": { "type": "string" },
+        "price": { "type": "number" },
+        "type": { "type": "string", "enum": ["house", "room", "apartment", "shared"] },
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "location": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "availability": { "type": "boolean" },
+        "isVerified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "landlordId", "price", "type"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "contextId": { "type": "string" },
+        "contextType": { "type": "string", "enum": ["product", "rental"] }
+      },
+      "required": ["senderId", "receiverId", "text", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User review",
+      "type": "object",
+      "properties": {
+        "fromId": { "type": "string" },
+        "toId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromId", "toId", "rating"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The target user, or 'admin' for admin notifications" },
+        "type": { "type": "string", "enum": ["system", "job_application", "new_listing", "new_user"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "relatedId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["userId", "type", "title", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "Users profiles" },
+    "/jobs/{jobId}": { "schema": "Job", "description": "Job listings" },
+    "/jobs/{jobId}/applications/{applicationId}": { "schema": "Application", "description": "Applications for a specific job" },
+    "/products/{productId}": { "schema": "Product", "description": "Product marketplace" },
+    "/rentals/{rentalId}": { "schema": "Rental", "description": "House rentals" },
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat history" },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "System reviews" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "Notifications for users and admins" }
+  }
+}
